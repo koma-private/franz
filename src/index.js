@@ -18,7 +18,6 @@ import './electron/exception';
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
-const settings = new Settings();
 let willQuitApp = false;
 
 // Ensure that the recipe directory exists
@@ -28,6 +27,23 @@ fs.ensureDir(path.join(app.getPath('userData'), 'recipes'));
 if (isWindows) {
   app.setAppUserModelId(appId);
 }
+
+// Force single window
+if (process.platform !== 'darwin') {
+  const isSecondInstance = app.makeSingleInstance(() => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
+  if (isSecondInstance) {
+    app.quit();
+  }
+}
+
+// Initialize Settings
+const settings = new Settings();
 
 const createWindow = async () => {
   // Remember window size
