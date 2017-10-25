@@ -135,9 +135,7 @@ export default class RecipesDashboard extends Component {
                   {intl.formatMessage(messages.nothingFound)}
                 </p>
               )}
-              {recipes.sort(function (a, b) {
-                  return a.id.toLowerCase().localeCompare(b.id.toLowerCase());
-                }).map(recipe => (
+              {recipes.map(recipe => (
                 <RecipeItem
                   key={recipe.id}
                   recipe={recipe}
