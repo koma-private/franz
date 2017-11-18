@@ -7,9 +7,13 @@ export const GA_ID = 'UA-74126766-6';
 export const DEFAULT_APP_SETTINGS = {
   autoLaunchOnStart: true,
   autoLaunchInBackground: false,
-  runInBackground: false,
+  runInBackground: true,
   enableSystemTray: true,
   minimizeToSystemTray: false,
-  locale: 'en-us', // TODO: Replace with proper solution once translations are in
+  showDisabledServices: true,
+  enableSpellchecking: true,
+  // spellcheckingLanguage: 'auto',
+  locale: 'en-US',
   beta: false,
+  isAppMuted: false,
 };

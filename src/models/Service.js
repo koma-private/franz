@@ -18,11 +18,13 @@ export default class Service {
 
   @observable order = 99;
   @observable isEnabled = true;
+  @observable isMuted = false;
   @observable team = '';
   @observable customUrl = '';
   @observable isNotificationEnabled = true;
   @observable isIndirectMessageBadgeEnabled = true;
   @observable customIconUrl = '';
+  @observable hasCrashed = false;
 
   constructor(data, recipe) {
     if (!data) {
@@ -53,12 +55,19 @@ export default class Service {
     this.isIndirectMessageBadgeEnabled = data.isIndirectMessageBadgeEnabled !== undefined
       ? data.isIndirectMessageBadgeEnabled : this.isIndirectMessageBadgeEnabled;
 
+    this.isMuted = data.isMuted !== undefined ? data.isMuted : this.isMuted;
+
     this.recipe = recipe;
   }
 
   @computed get url() {
     if (this.recipe.hasCustomUrl && this.customUrl) {
-      let url = normalizeUrl(this.customUrl);
+      let url;
+      try {
+        url = normalizeUrl(this.customUrl);
+      } catch (err) {
+        console.error(`Service (${this.recipe.name}): '${this.customUrl}' is not a valid Url.`);
+      }
 
       if (typeof this.recipe.buildUrl === 'function') {
         url = this.recipe.buildUrl(url);
@@ -112,6 +121,14 @@ export default class Service {
       frameName,
       options,
     }));
+
+    this.webview.addEventListener('did-start-loading', () => {
+      this.hasCrashed = false;
+    });
+
+    this.webview.addEventListener('crashed', () => {
+      this.hasCrashed = true;
+    });
   }
 
   initializeWebViewListener() {

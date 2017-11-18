@@ -37,16 +37,19 @@ export default class ServicesStore extends Store {
     this.actions.service.toggleService.listen(this._toggleService.bind(this));
     this.actions.service.handleIPCMessage.listen(this._handleIPCMessage.bind(this));
     this.actions.service.sendIPCMessage.listen(this._sendIPCMessage.bind(this));
+    this.actions.service.sendIPCMessageToAllServices.listen(this._sendIPCMessageToAllServices.bind(this));
     this.actions.service.setUnreadMessageCount.listen(this._setUnreadMessageCount.bind(this));
     this.actions.service.openWindow.listen(this._openWindow.bind(this));
     this.actions.service.filter.listen(this._filter.bind(this));
     this.actions.service.resetFilter.listen(this._resetFilter.bind(this));
+    this.actions.service.resetStatus.listen(this._resetStatus.bind(this));
     this.actions.service.reload.listen(this._reload.bind(this));
     this.actions.service.reloadActive.listen(this._reloadActive.bind(this));
     this.actions.service.reloadAll.listen(this._reloadAll.bind(this));
     this.actions.service.reloadUpdatedServices.listen(this._reloadUpdatedServices.bind(this));
     this.actions.service.reorder.listen(this._reorder.bind(this));
     this.actions.service.toggleNotifications.listen(this._toggleNotifications.bind(this));
+    this.actions.service.toggleAudio.listen(this._toggleAudio.bind(this));
     this.actions.service.openDevTools.listen(this._openDevTools.bind(this));
     this.actions.service.openDevToolsForActiveService.listen(this._openDevToolsForActiveService.bind(this));
 
@@ -56,6 +59,7 @@ export default class ServicesStore extends Store {
       this._mapActiveServiceToServiceModelReaction.bind(this),
       this._saveActiveService.bind(this),
       this._logoutReaction.bind(this),
+      this._shareSettingsWithServiceProcess.bind(this),
     ]);
 
     // Just bind this
@@ -75,6 +79,10 @@ export default class ServicesStore extends Store {
 
   @computed get enabled() {
     return this.all.filter(service => service.isEnabled);
+  }
+
+  @computed get allDisplayed() {
+    return this.stores.settings.all.showDisabledServices ? this.all : this.enabled;
   }
 
   @computed get filtered() {
@@ -144,12 +152,12 @@ export default class ServicesStore extends Store {
       serviceData.name = data.name;
     }
 
-    if (data.team) {
+    if (data.team && !data.customURL) {
       serviceData.team = data.team;
     }
 
-    if (data.team) {
-      serviceData.customUrl = data.customURL;
+    if (data.team && data.customURL) {
+      serviceData.customUrl = data.team;
     }
 
     this.actions.service.createService({
@@ -157,8 +165,6 @@ export default class ServicesStore extends Store {
       serviceData,
       redirect: false,
     });
-
-    return 'hello world';
   }
 
   @action async _updateService({ serviceId, serviceData, redirect = true }) {
@@ -209,21 +215,23 @@ export default class ServicesStore extends Store {
   }
 
   @action _setActiveNext() {
-    const nextIndex = this._wrapIndex(this.enabled.findIndex(service => service.isActive), 1, this.enabled.length);
+    const nextIndex = this._wrapIndex(this.allDisplayed.findIndex(service => service.isActive), 1, this.allDisplayed.length);
 
+    // TODO: simplify this;
     this.all.forEach((s, index) => {
       this.all[index].isActive = false;
     });
-    this.enabled[nextIndex].isActive = true;
+    this.allDisplayed[nextIndex].isActive = true;
   }
 
   @action _setActivePrev() {
-    const prevIndex = this._wrapIndex(this.enabled.findIndex(service => service.isActive), -1, this.enabled.length);
+    const prevIndex = this._wrapIndex(this.allDisplayed.findIndex(service => service.isActive), -1, this.allDisplayed.length);
 
+    // TODO: simplify this;
     this.all.forEach((s, index) => {
       this.all[index].isActive = false;
     });
-    this.enabled[prevIndex].isActive = true;
+    this.allDisplayed[prevIndex].isActive = true;
   }
 
   @action _setUnreadMessageCount({ serviceId, count }) {
@@ -278,6 +286,7 @@ export default class ServicesStore extends Store {
     if (channel === 'hello') {
       this._initRecipePolling(service.id);
       this._initializeServiceRecipeInWebview(serviceId);
+      this._shareSettingsWithServiceProcess();
     } else if (channel === 'messages') {
       this.actions.service.setUnreadMessageCount({
         serviceId,
@@ -288,16 +297,19 @@ export default class ServicesStore extends Store {
       });
     } else if (channel === 'notification') {
       const options = args[0].options;
-      if (service.recipe.hasNotificationSound) {
+      if (service.recipe.hasNotificationSound || service.isMuted) {
         Object.assign(options, {
           silent: true,
         });
       }
 
       if (service.isNotificationEnabled) {
+        const title = typeof args[0].title === 'string' ? args[0].title : service.name;
+        options.body = typeof options.body === 'string' ? options.body : '';
+
         this.actions.app.notify({
           notificationId: args[0].notificationId,
-          title: args[0].title,
+          title,
           options,
           serviceId,
         });
@@ -321,7 +333,17 @@ export default class ServicesStore extends Store {
   @action _sendIPCMessage({ serviceId, channel, args }) {
     const service = this.one(serviceId);
 
-    service.webview.send(channel, args);
+    if (service.webview) {
+      service.webview.send(channel, args);
+    }
+  }
+
+  @action _sendIPCMessageToAllServices({ channel, args }) {
+    this.all.forEach(s => this.actions.service.sendIPCMessage({
+      serviceId: s.id,
+      channel,
+      args,
+    }));
   }
 
   @action _openWindow({ event }) {
@@ -336,6 +358,10 @@ export default class ServicesStore extends Store {
 
   @action _resetFilter() {
     this.filterNeedle = null;
+  }
+
+  @action _resetStatus() {
+    this.actionStatus = [];
   }
 
   @action _reload({ serviceId }) {
@@ -367,9 +393,9 @@ export default class ServicesStore extends Store {
   }
 
   @action _reorder({ oldIndex, newIndex }) {
-    const oldEnabledSortIndex = this.all.indexOf(this.enabled[oldIndex]);
-    const newEnabledSortIndex = this.all.indexOf(this.enabled[newIndex]);
-
+    const showDisabledServices = this.stores.settings.all.showDisabledServices;
+    const oldEnabledSortIndex = showDisabledServices ? oldIndex : this.all.indexOf(this.enabled[oldIndex]);
+    const newEnabledSortIndex = showDisabledServices ? newIndex : this.all.indexOf(this.enabled[newIndex]);
 
     this.all.splice(newEnabledSortIndex, 0, this.all.splice(oldEnabledSortIndex, 1)[0]);
 
@@ -383,7 +409,7 @@ export default class ServicesStore extends Store {
       data.forEach((s) => {
         const service = s;
 
-        service.order = this.one(s.id).order;
+        service.order = services[s.id];
       });
     });
 
@@ -393,11 +419,25 @@ export default class ServicesStore extends Store {
   @action _toggleNotifications({ serviceId }) {
     const service = this.one(serviceId);
 
+    this.actions.service.updateService({
+      serviceId,
+      serviceData: {
+        isNotificationEnabled: !service.isNotificationEnabled,
+      },
+      redirect: false,
+    });
+  }
+
+  @action _toggleAudio({ serviceId }) {
+    const service = this.one(serviceId);
+
     service.isNotificationEnabled = !service.isNotificationEnabled;
 
     this.actions.service.updateService({
       serviceId,
-      serviceData: service,
+      serviceData: {
+        isMuted: !service.isMuted,
+      },
       redirect: false,
     });
   }
@@ -438,19 +478,11 @@ export default class ServicesStore extends Store {
 
   _mapActiveServiceToServiceModelReaction() {
     const { activeService } = this.stores.settings.all;
-    const services = this.enabled;
-    if (services.length) {
-      services.map(service => Object.assign(service, {
-        isActive: activeService ? activeService === service.id : services[0].id === service.id,
+    if (this.allDisplayed.length) {
+      this.allDisplayed.map(service => Object.assign(service, {
+        isActive: activeService ? activeService === service.id : this.allDisplayed[0].id === service.id,
       }));
-
-      // if (!services.active) {
-      //
-      // }
     }
-    //  else if (!activeService && services.length) {
-    //   services[0].isActive = true;
-    // }
   }
 
   _getUnreadMessageCountReaction() {
@@ -474,6 +506,13 @@ export default class ServicesStore extends Store {
       this.actions.settings.remove({ key: 'activeService' });
       this.allServicesRequest.invalidate().reset();
     }
+  }
+
+  _shareSettingsWithServiceProcess() {
+    this.actions.service.sendIPCMessageToAllServices({
+      channel: 'settings-update',
+      args: this.stores.settings.all,
+    });
   }
 
   _cleanUpTeamIdAndCustomUrl(recipeId, data) {

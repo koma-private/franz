@@ -60,6 +60,7 @@
   "infobar.buttonInstallUpdate": "再起動して更新をインストールする",
   "infobar.requiredRequestsFailed": "サービスとユーザー情報が読み込めません",
   "sidebar.settings": "設定",
+  "sidebar.addNewService": "!!!Add new service",
   "services.welcome": "Franzにようこそ",
   "services.getStarted": "はじめる",
   "settings.account.headline": "アカウント",
@@ -151,7 +152,11 @@
   "subscription.type.month": "月間",
   "subscription.type.year": "年間",
   "subscription.type.mining": "PCの処理能力を使ってFranzを支援する",
+<<<<<<< HEAD
   "subscription.mining.headline": "これはどのように動作していますか",
+=======
+  "subscription.mining.headline": "これはどのような仕組みですか",
+>>>>>>> develop
   "subscription.mining.experimental": "実験的",
   "subscription.mining.line1": "\"PCの処理能力を使ってFranzを支援する\"を有効にすることで、Franzはおよそ20-50%のCPUパワーを暗号通貨Moneroのマイニングに使用し、これはおよそ年間で5ドル分にあたります。",
   "subscription.mining.line2": "処理能力に基づいてCPUの使用率を適応しますのでバッテリーを無駄に消費したり、システムを遅くすることはありません。",

@@ -61,7 +61,11 @@ const messages = defineMessages({
   },
   indirectMessageInfo: {
     id: 'settings.service.form.indirectMessageInfo',
-    defaultMessage: '!!!You will be notified about all new messages in a channel, not just @username, @channel, @here, ...', // eslint-disable-line
+    defaultMessage: '!!!You will be notified about all new messages in a channel, not just @username, @channel, @here, ...',
+  },
+  isMutedInfo: {
+    id: 'settings.service.form.isMutedInfo',
+    defaultMessage: '!!!When disabled, all notification sounds and audio playback are muted',
   },
 });
 
@@ -69,10 +73,6 @@ const messages = defineMessages({
 export default class EditServiceForm extends Component {
   static propTypes = {
     recipe: PropTypes.instanceOf(Recipe).isRequired,
-    // service: PropTypes.oneOfType([
-    //   PropTypes.object,
-    //   PropTypes.instanceOf(Service),
-    // ]),
     service(props, propName) {
       if (props.action === 'edit' && !(props[propName] instanceof Service)) {
         return new Error(`'${propName}'' is expected to be of type 'Service'
@@ -207,7 +207,7 @@ export default class EditServiceForm extends Component {
                 )}
                 {recipe.hasCustomUrl && (
                   <TabItem title={intl.formatMessage(messages.tabOnPremise)}>
-                    {user.isPremium ? (
+                    {user.isPremium || recipe.author.find(a => a.email === user.email) ? (
                       <div>
                         <Input field={form.$('customUrl')} />
                         {form.error === 'url-validation-error' && (
@@ -235,11 +235,15 @@ export default class EditServiceForm extends Component {
               {recipe.hasIndirectMessages && (
                 <div>
                   <Toggle field={form.$('isIndirectMessageBadgeEnabled')} />
-                  <p className="settings__indirect-message-help">
+                  <p className="settings__help">
                     {intl.formatMessage(messages.indirectMessageInfo)}
                   </p>
                 </div>
               )}
+              <Toggle field={form.$('isMuted')} />
+              <p className="settings__help">
+                {intl.formatMessage(messages.isMutedInfo)}
+              </p>
               <Toggle field={form.$('isEnabled')} />
             </div>
             {recipe.message && (

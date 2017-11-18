@@ -64,6 +64,12 @@ class RecipeWebview {
     });
   }
 
+  onNotify(fn) {
+    if (typeof fn === 'function') {
+      window.Notification.prototype.onNotify = fn;
+    }
+  }
+
   initialize(fn) {
     if (typeof fn === 'function') {
       fn();

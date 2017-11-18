@@ -2,19 +2,23 @@ import { remote, ipcRenderer, shell } from 'electron';
 import { action, observable } from 'mobx';
 import moment from 'moment';
 import key from 'keymaster';
-import path from 'path';
+import { getDoNotDisturb } from '@meetfranz/electron-notification-state';
 import idleTimer from '@paulcbetts/system-idle-time';
+import AutoLaunch from 'auto-launch';
 
 import Store from './lib/Store';
 import Request from './lib/Request';
-import { CHECK_INTERVAL } from '../config';
-import { isMac, isLinux } from '../environment';
+import { CHECK_INTERVAL, DEFAULT_APP_SETTINGS } from '../config';
+import { isMac } from '../environment';
 import locales from '../i18n/translations';
 import { gaEvent } from '../lib/analytics';
 import Miner from '../lib/Miner';
 
-const { app, getCurrentWindow, powerMonitor } = remote;
-const defaultLocale = 'en-US';
+const { app, powerMonitor } = remote;
+const defaultLocale = DEFAULT_APP_SETTINGS.locale;
+const autoLauncher = new AutoLaunch({
+  name: 'Franz',
+});
 
 export default class AppStore extends Store {
   updateStatusTypes = {
@@ -41,7 +45,9 @@ export default class AppStore extends Store {
   miner = null;
   @observable minerHashrate = 0.0;
 
-  constructor(...args: any) {
+  @observable isSystemMuted = false;
+
+  constructor(...args) {
     super(...args);
 
     // Register action handlers
@@ -53,6 +59,8 @@ export default class AppStore extends Store {
     this.actions.app.installUpdate.listen(this._installUpdate.bind(this));
     this.actions.app.resetUpdateStatus.listen(this._resetUpdateStatus.bind(this));
     this.actions.app.healthCheck.listen(this._healthCheck.bind(this));
+    this.actions.app.muteApp.listen(this._muteApp.bind(this));
+    this.actions.app.toggleMuteApp.listen(this._toggleMuteApp.bind(this));
 
     this.registerReactions([
       this._offlineCheck.bind(this),
@@ -76,6 +84,11 @@ export default class AppStore extends Store {
     // Check if Franz should launch on start
     // Needs to be delayed a bit
     this._autoStart();
+
+    // Check if system is muted
+    // There are no events to subscribe so we need to poll everey 5s
+    this._systemDND();
+    setInterval(() => this._systemDND(), 5000);
 
     // Check for updates once every 4 hours
     setInterval(() => this._checkForUpdates(), CHECK_INTERVAL);
@@ -112,24 +125,15 @@ export default class AppStore extends Store {
       setTimeout(window.location.reload, 5000);
     });
 
-    // Open Dev Tools (even in production mode)
-    key('⌘+ctrl+shift+alt+i, ctrl+shift+alt+i', () => {
-      getCurrentWindow().toggleDevTools();
-    });
-
-    key('⌘+ctrl+shift+alt+pageup, ctrl+shift+alt+pageup', () => {
-      this.actions.service.openDevToolsForActiveService();
-    });
-
     // Set active the next service
     key(
-      '⌘+pagedown, ctrl+pagedown, ⌘+shift+tab, ctrl+shift+tab', () => {
+      '⌘+pagedown, ctrl+pagedown, ⌘+tab, ctrl+tab', () => {
         this.actions.service.setActiveNext();
       });
 
     // Set active the prev service
     key(
-      '⌘+pageup, ctrl+pageup, ⌘+tab, ctrl+tab', () => {
+      '⌘+pageup, ctrl+pageup, ⌘+shift+tab, ctrl+shift+tab', () => {
         this.actions.service.setActivePrev();
       });
 
@@ -161,33 +165,24 @@ export default class AppStore extends Store {
       indicator = '•';
     } else if (unreadDirectMessageCount === 0 && unreadIndirectMessageCount === 0) {
       indicator = 0;
+    } else {
+      indicator = parseInt(indicator, 10);
     }
 
     ipcRenderer.send('updateAppIndicator', { indicator });
   }
 
-  @action _launchOnStartup({ enable, openInBackground }) {
+  @action _launchOnStartup({ enable }) {
     this.autoLaunchOnStart = enable;
 
-    let settings = {
-      openAtLogin: enable,
-    };
-
-    // For Windows
-    if (process.platform === 'win32') {
-      settings = Object.assign({
-        openAsHidden: openInBackground,
-        path: app.getPath('exe'),
-        args: [
-          '--processStart', `"${path.basename(app.getPath('exe'))}"`,
-        ],
-      }, settings);
-
-      if (openInBackground) {
-        settings.args.push(
-          '--process-start-args', '"--hidden"',
-        );
+    try {
+      if (enable) {
+        autoLauncher.enable();
+      } else {
+        autoLauncher.disable();
       }
+    } catch (err) {
+      console.warn(err);
     }
 
     gaEvent('App', enable ? 'enable autostart' : 'disable autostart');
@@ -214,6 +209,18 @@ export default class AppStore extends Store {
 
   @action _healthCheck() {
     this.healthCheckRequest.execute();
+  }
+
+  @action _muteApp({ isMuted }) {
+    this.actions.settings.update({
+      settings: {
+        isMuted,
+      },
+    });
+  }
+
+  @action _toggleMuteApp() {
+    this._muteApp({ isMuted: !this.stores.settings.all.isMuted });
   }
 
   // Reactions
@@ -296,31 +303,23 @@ export default class AppStore extends Store {
   }
 
   async _autoStart() {
-    if (!isLinux) {
-      this._checkAutoStart();
+    this.autoLaunchOnStart = await this._checkAutoStart();
 
-      // we need to wait until the settings request is resolved
-      await this.stores.settings.allSettingsRequest;
+    // we need to wait until the settings request is resolved
+    await this.stores.settings.allSettingsRequest;
 
-      // We don't set autostart on first launch for macOS as disabling
-      // the option is currently broken
-      // https://github.com/meetfranz/franz/issues/17
-      // https://github.com/electron/electron/issues/10880
-      if (process.platform === 'darwin') return;
-
-      if (!this.stores.settings.all.appStarts) {
-        this.actions.app.launchOnStartup({
-          enable: true,
-        });
-      }
+    if (!this.stores.settings.all.appStarts) {
+      this.actions.app.launchOnStartup({
+        enable: true,
+      });
     }
   }
 
-  _checkAutoStart() {
-    const loginItem = app.getLoginItemSettings({
-      path: app.getPath('exe'),
-    });
+  async _checkAutoStart() {
+    return autoLauncher.isEnabled() || false;
+  }
 
-    this.autoLaunchOnStart = loginItem.openAtLogin;
+  _systemDND() {
+    this.isSystemMuted = getDoNotDisturb();
   }
 }

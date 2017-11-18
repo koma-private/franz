@@ -22,6 +22,14 @@
     "7zip-bin-mac" "^1.0.1"
     "7zip-bin-win" "^2.1.0"
 
+"@meetfranz/electron-notification-state@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@meetfranz/electron-notification-state/-/electron-notification-state-1.0.0.tgz#75e9d774bdaf15991eacd92cde8469b348259d8c"
+  dependencies:
+    macos-notification-state "^1.1.0"
+    windows-notification-state "^1.3.0"
+    windows-quiet-hours "^1.2.2"
+
 "@paulcbetts/cld@^2.4.6":
   version "2.4.6"
   resolved "https://registry.yarnpkg.com/@paulcbetts/cld/-/cld-2.4.6.tgz#a992f6bc43cab212ac2c4488a671cf302f8b62e7"
@@ -32,8 +40,8 @@
     underscore "^1.6.0"
 
 "@paulcbetts/spellchecker@^4.0.5":
-  version "4.0.5"
-  resolved "https://registry.yarnpkg.com/@paulcbetts/spellchecker/-/spellchecker-4.0.5.tgz#4ea9bfb85faba53c094c0809a18986bf44265c5f"
+  version "4.0.6"
+  resolved "https://registry.yarnpkg.com/@paulcbetts/spellchecker/-/spellchecker-4.0.6.tgz#79ef1f9c19c5a3156921ccaa9ffdc3efbbee47e3"
   dependencies:
     nan "^2.0.0"
 
@@ -79,6 +87,12 @@ acorn@^3.0.4:
 acorn@^5.1.1:
   version "5.1.2"
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-5.1.2.tgz#911cb53e036807cf0fa778dc5d370fbd864246d7"
+
+address-rfc2822@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/address-rfc2822/-/address-rfc2822-2.0.1.tgz#1a1bdb942b5e20e2c1ba5d5f396d5824ff7ae6ea"
+  dependencies:
+    email-addresses "^3.0.0"
 
 after@0.8.2:
   version "0.8.2"
@@ -150,6 +164,10 @@ anymatch@^1.3.0:
   dependencies:
     micromatch "^2.1.5"
     normalize-path "^2.0.0"
+
+applescript@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/applescript/-/applescript-1.0.0.tgz#bb87af568cad034a4e48c4bdaf6067a3a2701317"
 
 aproba@^1.0.3:
   version "1.1.2"
@@ -318,6 +336,16 @@ async@^0.9.0:
 asynckit@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
+
+"auto-launch@https://github.com/meetfranz/node-auto-launch.git":
+  version "5.0.1"
+  resolved "https://github.com/meetfranz/node-auto-launch.git#b90a0470467eb84435e6554ae9db1e2c6db79e61"
+  dependencies:
+    applescript "^1.0.0"
+    mkdirp "^0.5.1"
+    path-is-absolute "^1.0.0"
+    untildify "^3.0.2"
+    winreg "1.2.2"
 
 aws-sign2@~0.6.0:
   version "0.6.0"
@@ -1147,6 +1175,10 @@ binary@^0.3.0:
   dependencies:
     buffers "~0.1.1"
     chainsaw "~0.1.0"
+
+bindings@^1.2.1, bindings@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/bindings/-/bindings-1.3.0.tgz#b346f6ecf6a95f5a815c5839fc7cdb22502f1ed7"
 
 bindings@~1.2.1:
   version "1.2.1"
@@ -1998,12 +2030,6 @@ electron-spellchecker@^1.2.0:
     rxjs-serial-subscription "^0.1.1"
     spawn-rx "^2.0.7"
 
-electron-squirrel-startup@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/electron-squirrel-startup/-/electron-squirrel-startup-1.0.0.tgz#19b4e55933fa0ef8f556784b9c660f772546a0b8"
-  dependencies:
-    debug "^2.2.0"
-
 electron-to-chromium@^1.3.18:
   version "1.3.20"
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.20.tgz#2eedd5ccbae7ddc557f68ad1fce9c172e915e4e5"
@@ -2040,6 +2066,10 @@ electron@^1.7.9:
     "@types/node" "^7.0.18"
     electron-download "^3.0.1"
     extract-zip "^1.0.3"
+
+email-addresses@^3.0.0:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/email-addresses/-/email-addresses-3.0.1.tgz#c1fc20c189e7f96d4012d375db5feaccdd24391c"
 
 emojis-list@^2.0.0:
   version "2.1.0"
@@ -3994,6 +4024,13 @@ macaddress@^0.2.7:
   version "0.2.8"
   resolved "https://registry.yarnpkg.com/macaddress/-/macaddress-0.2.8.tgz#5904dc537c39ec6dbefeae902327135fa8511f12"
 
+macos-notification-state@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/macos-notification-state/-/macos-notification-state-1.1.0.tgz#ee59671e05c1ec388c0b09101ef611c85b4b4e0e"
+  dependencies:
+    bindings "^1.2.1"
+    nan "^2.4.0"
+
 make-dir@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/make-dir/-/make-dir-1.0.0.tgz#97a011751e91dd87cfadef58832ebb04936de978"
@@ -4225,7 +4262,7 @@ mute-stream@0.0.7, mute-stream@~0.0.4:
   version "0.0.7"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.7.tgz#3075ce93bc21b8fab43e1bc4da7e8115ed1e7bab"
 
-nan@^2.0.0, nan@^2.0.5, nan@^2.3.0, nan@^2.3.2:
+nan@^2.0.0, nan@^2.0.5, nan@^2.3.0, nan@^2.3.2, nan@^2.4.0, nan@^2.7.0:
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.7.0.tgz#d95bf721ec877e08db276ed3fc6eb78f9083ad46"
 
@@ -5949,6 +5986,10 @@ universalify@^0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/universalify/-/universalify-0.1.1.tgz#fa71badd4437af4c148841e3b3b165f9e9e590b7"
 
+untildify@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/untildify/-/untildify-3.0.2.tgz#7f1f302055b3fea0f3e81dc78eb36766cb65e3f1"
+
 unzip-response@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/unzip-response/-/unzip-response-2.0.1.tgz#d2f0f737d16b0615e72a6935ed04214572d56f97"
@@ -6132,6 +6173,24 @@ widest-line@^1.0.0:
 window-size@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/window-size/-/window-size-0.1.4.tgz#f8e1aa1ee5a53ec5bf151ffa09742a6ad7697876"
+
+windows-notification-state@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/windows-notification-state/-/windows-notification-state-1.3.0.tgz#9f727782ecac8d920a408f1026be6f8e08fd902e"
+  dependencies:
+    bindings "^1.2.1"
+    nan "^2.4.0"
+
+windows-quiet-hours@^1.2.2:
+  version "1.2.4"
+  resolved "https://registry.yarnpkg.com/windows-quiet-hours/-/windows-quiet-hours-1.2.4.tgz#7ae57b13fe9423f2635ac0ed5791f674401a7c7a"
+  dependencies:
+    bindings "^1.3.0"
+    nan "^2.7.0"
+
+winreg@1.2.2:
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/winreg/-/winreg-1.2.2.tgz#8509afa3b71c5bbd110a6d7c6247ec67736c598f"
 
 word-wrap@^1.0.3:
   version "1.2.3"
