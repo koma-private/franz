@@ -108,6 +108,7 @@ export default class ServiceWebview extends Component {
             muted={isAppMuted || service.isMuted}
             disablewebsecurity
             allowpopups
+            webpreferences="nativeWindowOpen=yes"
           />
         )}
         {statusBar}
